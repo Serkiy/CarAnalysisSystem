@@ -18,14 +18,14 @@ class MockOBDConnection:
             def __init__(self, value):
                 self.value = value
         
-        # Simulează valorile în funcție de tipul de comandă
+        # Simuleaza valorile 
         if "RPM" in str(command_type):
-            # RPM realist: 800-3500, cu variații simulate
+            # RPM realist
             rpm_value = random.randint(800, 1200) if random.random() > 0.7 else random.randint(1500, 3500)
             return MockResponse(type('Quantity', (), {'magnitude': rpm_value})())
         
         elif "SPEED" in str(command_type):
-            # Viteză realistă: 0-120 km/h
+            # Viteza medie realista: 0-120 km/h
             speed_value = random.randint(0, 30) if random.random() > 0.6 else random.randint(40, 120)
             
             class SpeedValue:
@@ -65,11 +65,11 @@ def main():
 
     try:
         for i in range(20):
-            # Simulează citirea datelor
+            # Simuleaza citirea datelor
             r_rpm = conn.query("RPM")
             r_speed = conn.query("SPEED")
 
-            # Procesează datele ca în codul original
+            
             rpm = r_rpm.value.magnitude if (r_rpm.value is not None) else None
             
             speed = None
@@ -79,10 +79,10 @@ def main():
                 except Exception:
                     speed = r_speed.value.magnitude
 
-            # Afișează cu emoji pentru vizualizare mai bună
+            
             print(f"[{i+1:2d}]  RPM: {rpm:4d} |  Speed: {speed:3d} km/h | ", end="")
             
-            # Adaugă indicator vizual
+          # Indeicator vizual 
             if speed == 0:
                 print(" Stationary")
             elif speed < 50:
