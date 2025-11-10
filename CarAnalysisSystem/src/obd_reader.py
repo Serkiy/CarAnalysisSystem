@@ -1,70 +1,45 @@
-﻿import time
-import sqlite3
-import os
-from datetime import datetime
+﻿# obd_test.py
+import obd
+import time
 
-class MockOBDReader:
-    """Simulator OBD-II pentru testare"""
-    
-    def __init__(self):
-        # Asigură-te că folderul data există
-        if not os.path.exists('data'):
-            os.makedirs('data')
-        
-        self.connection = sqlite3.connect('data/car_data.db')
-        self.create_table()
-    
-    def create_table(self):
-        cursor = self.connection.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS car_metrics (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                rpm INTEGER,
-                speed INTEGER,
-                engine_temp INTEGER,
-                battery_voltage REAL,
-                fuel_level INTEGER
-            )
-        ''')
-        self.connection.commit()
-        print("✅ Database table created successfully!")
-    
-    def read_obd_data(self):
-        """Simulează citirea datelor de la OBD-II"""
-        import random
-        
-        return {
-            'rpm': random.randint(800, 3500),
-            'speed': random.randint(0, 120),
-            'engine_temp': random.randint(85, 105),
-            'battery_voltage': round(random.uniform(12.5, 14.5), 2),
-            'fuel_level': random.randint(10, 100)
-        }
-    
-    def save_to_database(self, data):
-        cursor = self.connection.cursor()
-        cursor.execute('''
-            INSERT INTO car_metrics (rpm, speed, engine_temp, battery_voltage, fuel_level)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (data['rpm'], data['speed'], data['engine_temp'], 
-              data['battery_voltage'], data['fuel_level']))
-        self.connection.commit()
-        print(f"💾 Data saved: {data}")
-    
-    def start_monitoring(self):
-        """Pornește monitorizarea continuă"""
-        print("🚗 Starting car monitoring...")
-        try:
-            while True:
-                data = self.read_obd_data()
-                self.save_to_database(data)
-                time.sleep(5)  # Citește la fiecare 5 secunde
-        except KeyboardInterrupt:
-            print("\n🛑 Monitoring stopped by user")
-        finally:
-            self.connection.close()
+
+PORT = "COM6"  # sau None pentru autoconnect
+
+def main():
+    if PORT:
+        print(f"Încerc conectarea la port: {PORT}")
+        conn = obd.OBD(PORT, timeout=6)
+    else:
+        print("Încerc conectare automată (auto detect)...")
+        conn = obd.OBD(timeout=5)
+
+    if not conn.is_connected():
+        print("Nu s-a putut conecta la adaptorul OBD. Verifică: port, alime=ntare la mașină (ignition ON), împerechere Bluetooth.")
+        return
+
+    print("Conectat la:", conn.port_name)
+
+    cmd_rpm = obd.commands.RPM
+    cmd_speed = obd.commands.SPEED
+
+    try:
+        for i in range(20):
+            r_rpm = conn.query(cmd_rpm)
+            r_speed = conn.query(cmd_speed)
+
+            rpm = r_rpm.value.magnitude if (r_rpm.value is not None) else None
+            speed = None
+            if r_speed.value is not None:
+                try:
+                    speed = r_speed.value.to("km/h").magnitude
+                except Exception:
+                    speed = r_speed.value.magnitude
+
+            print(f"[{i+1}] RPM: {rpm} | Speed: {speed} km/h")
+            time.sleep(1)
+    finally:
+        conn.close()
+        print("Conexiune închisă.")
 
 if __name__ == "__main__":
-    reader = MockOBDReader()
-    reader.start_monitoring()
+    main()
