@@ -1,0 +1,4 @@
+pip==24.3.1
+obd==0.7.2
+setuptools==68.2.2
+pyserial==3.5
