@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Car Analysis System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h1>Car Analysis Dashboard</h1>
+
+<canvas id="speedChart"></canvas>
+<canvas id="rpmChart"></canvas>
+
+<script>
+async function loadData() {
+    const res = await fetch("/data");
+    const data = await res.json();
+
+    const speeds = data.map(d => d[0]).reverse();
+    const rpms = data.map(d => d[1]).reverse();
+    const labels = speeds.map((_, i) => i);
+
+    new Chart(document.getElementById("speedChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{ label: "Speed (km/h)", data: speeds }]
+        }
+    });
+
+    new Chart(document.getElementById("rpmChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{ label: "RPM", data: rpms }]
+        }
+    });
+}
+
+loadData();
+setInterval(() => location.reload(), 3000);
+</script>
+
+</body>
+</html>

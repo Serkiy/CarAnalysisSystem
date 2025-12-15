@@ -1,103 +1,70 @@
-﻿# obd_test.py
-import time
+﻿import time
 import random
+import requests
 
 class MockOBDConnection:
-    """Simulează o conexiune OBD pentru testare"""
-    
     def __init__(self, port=None):
         self.port_name = port or "MOCK_COM_PORT"
         self._connected = True
-        
+
     def is_connected(self):
         return self._connected
-        
+
     def query(self, command_type):
-        """Simulează interogarea unui parametru OBD"""
         class MockResponse:
             def __init__(self, value):
                 self.value = value
-        
-        # Simuleaza valorile 
+
         if "RPM" in str(command_type):
-            # RPM realist
-            rpm_value = random.randint(800, 1200) if random.random() > 0.7 else random.randint(1500, 3500)
-            return MockResponse(type('Quantity', (), {'magnitude': rpm_value})())
-        
+            rpm_value = random.randint(800, 3500)
+            return MockResponse(type('Q', (), {'magnitude': rpm_value})())
+
         elif "SPEED" in str(command_type):
-            # Viteza medie realista: 0-120 km/h
-            speed_value = random.randint(0, 30) if random.random() > 0.6 else random.randint(40, 120)
-            
+            speed_value = random.randint(0, 120)
+
             class SpeedValue:
                 def __init__(self, speed):
                     self.magnitude = speed
                 def to(self, unit):
-                    return self  # Pentru compatibilitate cu codul original
-            
+                    return self
+
             return MockResponse(SpeedValue(speed_value))
-        
-        else:
-            # Pentru alte comenzi
-            return MockResponse(type('Quantity', (), {'magnitude': 0})())
-    
+
+        return MockResponse(type('Q', (), {'magnitude': 0})())
+
     def close(self):
         self._connected = False
 
-def main():
-    PORT = "COM6"  # sau None pentru autoconnect
-    
-    print(" OBD TEST - MOCK MODE")
-    print(" Running in simulation mode (no hardware required)")
-    
-    if PORT:
-        print(f" Simulating connection to port: {PORT}")
-        conn = MockOBDConnection(PORT)
-    else:
-        print(" Simulating auto-detect connection...")
-        conn = MockOBDConnection()
 
-    if not conn.is_connected():
-        print(" Mock connection failed (should not happen)")
-        return
+def main():
+    SERVER_URL = "http://127.0.0.1:5000/add-data"
+    conn = MockOBDConnection("COM6")
 
     print("Connected to:", conn.port_name)
-    print("generating realistic car data...")
 
     try:
-        for i in range(20):
-            # Simuleaza citirea datelor
+        while True:
             r_rpm = conn.query("RPM")
             r_speed = conn.query("SPEED")
 
-            
-            rpm = r_rpm.value.magnitude if (r_rpm.value is not None) else None
-            
-            speed = None
-            if r_speed.value is not None:
-                try:
-                    speed = r_speed.value.to("km/h").magnitude
-                except Exception:
-                    speed = r_speed.value.magnitude
+            rpm = r_rpm.value.magnitude
+            speed = r_speed.value.magnitude
 
-            
-            print(f"[{i+1:2d}]  RPM: {rpm:4d} |  Speed: {speed:3d} km/h | ", end="")
-            
-          # Indeicator vizual 
-            if speed == 0:
-                print(" Stationary")
-            elif speed < 50:
-                print(" City driving")
-            else:
-                print(" Highway driving")
-                
-            time.sleep(1)
-            
+            print(f"RPM: {rpm} | Speed: {speed} km/h")
+
+            # 🔥 TRIMITERE CĂTRE WEB
+            requests.post(SERVER_URL, json={
+                "speed": speed,
+                "rpm": rpm
+            })
+
+            time.sleep(2)
+
     except KeyboardInterrupt:
-        print("\n Test stopped by user")
+        print("Stopped")
     finally:
         conn.close()
-        print(" Connection closed.")
-        print(" Mock test completed successfully!")
+
 
 if __name__ == "__main__":
     main()
