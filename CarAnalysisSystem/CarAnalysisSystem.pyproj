@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>ec1b8b93-f25a-4976-907a-77dd8829d289</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>src\obd_reader.py</StartupFile>
+    <StartupFile>src\web_dashboard.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,7 +27,6 @@
     <Compile Include="src\web_dashboard.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="src\obd_reader.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="data\" />
